@@ -540,6 +540,12 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.66; }
 }
 
 .preview-stage { min-height: 60px; }
+.preview-empty {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 260px; padding: 32px; text-align: center;
+  border: 1.5px dashed var(--line); border-radius: var(--r-lg);
+  color: var(--ink-4); font-size: 13.5px; background: var(--bg-2);
+}
 
 /* ===================== 9. 학급 단위 ===================== */
 .csv-help {

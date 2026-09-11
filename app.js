@@ -392,6 +392,11 @@
       || document.querySelector('.preview-stage:not(#batchStage)');
   }
 
+  function clearPreview() {
+    const box = previewBox();
+    if (box) box.innerHTML = '<p class="preview-empty">값을 입력한 뒤 "미리보기 갱신"을 누르면 리포트가 나타납니다.</p>';
+  }
+
   function renderOne() {
     const box = previewBox();
     const d = collect();
@@ -399,9 +404,11 @@
     updateFitDisplay(d);
   }
 
+  /* 입력 중에는 리포트를 다시 그리지 않고, 희망 과목 개설률 자동계산 값만 갱신합니다.
+     실제 리포트는 "미리보기 갱신" 버튼을 눌러야 반영됩니다. */
   function renderSoon() {
     clearTimeout(timer);
-    timer = setTimeout(() => { renderOne(); saveForm(); }, 180);
+    timer = setTimeout(() => { updateFitDisplay(collect()); saveForm(); }, 180);
   }
 
   const FORM_IDS = ['fName', 'fNo', 'fGrade', 'fSchoolType', 'fRegion', 'fTrack', 'fLevel',
@@ -684,7 +691,8 @@ async function lookup() {
     const wIn = $('fWant'); if (wIn) wIn.readOnly = false;
     try { localStorage.removeItem(LS_FORM); } catch (e) {}
     say('batchStatus', ''); say('lookupState', ''); say('cfgState', '');
-    renderOne();
+    updateFitDisplay(collect());
+    clearPreview();
   }
 
   function bind() {
@@ -737,7 +745,8 @@ async function lookup() {
     loadCfg();
     loadForm();
     bind();
-    renderOne();
+    updateFitDisplay(collect());
+    clearPreview();
 
     console.info('[app.js] ready ·',
       Object.keys(TRACKS).length, 'tracks ·',
