@@ -11,7 +11,7 @@ const Report = (function () {
   const esc = s => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  function computeScores(d) {
+  function computeScores(d, r) {
     const base = BASELINE[d.region] || BASELINE.mid;
     const st = SCHOOL_TYPES[d.schoolType] || SCHOOL_TYPES.general;
     const boost = st.boost || {};
@@ -19,11 +19,16 @@ const Report = (function () {
     /* 특목고이면서 해당 유형의 주력 계열을 지망하는 경우에만 가산 */
     const aligned = !st.tracks || st.tracks.includes(d.track);
 
+    /* 개설 과목 데이터가 있으면 실제 대조 결과(희소 과목 가중)로 진로 적합도를 계산하고,
+       없을 때만 수기 입력값을 사용합니다 */
+    const fit = (r && r.fitScore != null) ? r.fitScore : d.want;
+
     const raw = {
       diversity: d.subjects / NATIONAL.total * 100,
       real:      (d.subjects - d.dup) / base.real * 100,
-      fit:       d.want,
-      access:    d.coop / 12 * 100,
+      fit:       fit,
+      access:    d.coop / COOP_BASELINE * 100,
+      credit:    d.credit,
       infra:     d.net
     };
 
@@ -87,6 +92,30 @@ const Report = (function () {
     inSchool = [...new Set(inSchool)];
     coop = [...new Set(coop)];
 
+    /* 진로 적합도 = 희망 과목 개설률. 계열의 희소 과목·전문 교과는 그 계열다움을
+       가장 잘 드러내는 과목이므로 가중치를 2배로 둡니다 */
+    let fitScore = null;
+    if (hasData) {
+      const poolForFit = [...new Set(pool.concat(specialPool))];
+      const weightOf = s => (t.scarce.includes(s) || specialPool.includes(s)) ? 2 : 1;
+      let wTotal = 0, wIn = 0;
+      poolForFit.forEach(s => {
+        const w = weightOf(s);
+        wTotal += w;
+        if (inSchool.includes(s)) wIn += w;
+      });
+      fitScore = wTotal ? Math.round(wIn / wTotal * 100) : 0;
+    }
+
+    /* 공동교육과정 실사 목록과 과목명을 대조해 실제 조사된 운영 방식을 표기 */
+    const coopRows = Array.isArray(d.coopRows) ? d.coopRows : [];
+    const coopNote = s => {
+      const hit = coopRows.find(c => c.name === s);
+      if (!hit) return null;
+      const kind = hit.type === 'online' ? '온라인 쌍방향' : '대면 거점';
+      return hit.org ? `${kind} · ${hit.org} 실사 확인` : `${kind} 실사 확인`;
+    };
+
     const related = hasData
       ? [...new Set(t.general.concat(t.career, t.fusion, t.special || []))]
           .filter(s => offered.includes(s) && !inSchool.includes(s) && !coop.includes(s)).slice(0, 10)
@@ -95,9 +124,10 @@ const Report = (function () {
     const credits = inSchool.length * GRADUATION.unit + coop.length * 2;
     return {
       track: t, schoolType: st, isSpecial,
-      inSchool, coop, related, verified,
+      inSchool, coop, related, verified, coopNote,
       specialCount: specialPool.length,
       offeredCount: offered.length,
+      fitScore,
       credits, ratio: Math.round(credits / GRADUATION.subject * 100)
     };
   }
@@ -234,8 +264,11 @@ const Report = (function () {
 
   /* ---------- 2쪽 ---------- */
   function page2(d, s, r) {
-    const rowsOf = (arr, note) => arr.length
-      ? arr.map(x => `<tr><td class="chk">□</td><td>${esc(x)}</td><td class="note">${note}</td></tr>`).join('')
+    const rowsOf = (arr, note, useCoopNote) => arr.length
+      ? arr.map(x => {
+          const found = useCoopNote && r.coopNote(x);
+          return `<tr><td class="chk">${found ? '☑' : '□'}</td><td>${esc(x)}</td><td class="note">${esc(found || note)}</td></tr>`;
+        }).join('')
       : `<tr><td class="chk">–</td><td colspan="2" class="note">해당 과목이 없습니다.</td></tr>`;
 
     const road = (ROADMAP[d.grade] || []).map(x => `<li>${esc(x)}</li>`).join('');
@@ -269,7 +302,7 @@ const Report = (function () {
         <h3 class="r-h3">공동교육과정 탐색 권장 <span class="r-count amber">${r.coop.length}과목</span></h3>
         <table class="r-table r-list">
           <thead><tr><th class="chk">확인</th><th>과목명</th><th>비고</th></tr></thead>
-          <tbody>${rowsOf(r.coop, r.verified ? '교내 미확인 · 거점학교·온라인 검색' : '거점학교 · 온라인 강좌 검색')}</tbody>
+          <tbody>${rowsOf(r.coop, r.verified ? '교내 미확인 · 거점학교·온라인 검색' : '거점학교 · 온라인 강좌 검색', true)}</tbody>
         </table>
 
         ${relatedBlock}
@@ -358,8 +391,8 @@ const Report = (function () {
   }
 
   function render(d) {
-    const s = computeScores(d);
     const r = buildSubjects(d);
+    const s = computeScores(d, r);
     return `<article class="r-doc">${page1(d, s, r)}${page2(d, s, r)}${page3(d, s, r)}</article>`;
   }
 

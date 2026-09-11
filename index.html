@@ -80,8 +80,8 @@
       </p>
 
       <div class="hero-cta">
-        <a class="btn btn-primary btn-lg"="#student">학생 진단 시작</a>
-        <a class="btn btn-glass btn-lg" ="#batch">학급 단위로 만들기</a>
+        <a class="btn btn-primary btn-lg" href="#student">학생 진단 시작</a>
+        <a class="btn btn-glass btn-lg" href="#batch">학급 단위로 만들기</a>
       </div>
     </div>
 
@@ -89,6 +89,10 @@
       <span class="emblem-ring"></span>
       <span class="emblem-ring d2"></span>
       <svg class="emblem-mark"><use href="#compass"></use></svg>
+      <span class="emblem-way w1">1</span>
+      <span class="emblem-way w2">2</span>
+      <span class="emblem-way w3">3</span>
+      <span class="emblem-way w4">4</span>
     </div>
   </div>
 </header>
@@ -98,7 +102,7 @@
      ===================================================== -->
 <section class="section" id="setup">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-step="1">
       <span class="step-badge"><i>1</i>최초 1회만</span>
       <h2>인증키와 프록시 설정</h2>
       <p class="lead">
@@ -152,7 +156,7 @@
      ===================================================== -->
 <section class="section section-tint" id="school">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-step="2">
       <span class="step-badge"><i>2</i>학교 단위</span>
       <h2>개설 과목 확인</h2>
       <p class="lead">
@@ -210,7 +214,7 @@ placeholder="조회하면 자동으로 채워집니다. 직접 입력할 때는 
      ===================================================== -->
 <section class="section" id="student">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-step="3">
       <span class="step-badge"><i>3</i>학생 단위</span>
       <h2>진단한 결과 보기</h2>
       <p class="lead">값을 바꾸면 오른쪽 미리보기가 바로 갱신됩니다.</p>
@@ -274,35 +278,40 @@ placeholder="조회하면 자동으로 채워집니다. 직접 입력할 때는 
                 <input type="number" id="fDup" min="0" max="100" step="1" value="12">
                 <p class="hint">여러 학기에 반복되는 수</p>
               </div>
-              <div class="field">
-                <label for="fWant">희망 과목 개설률</label>
+              <div class="field field-full">
+                <label for="fWant">희망 과목 개설률<span class="opt" id="fWantAutoTag" hidden>자동 계산됨</span></label>
                 <div class="suffix-wrap">
                   <input type="number" id="fWant" min="0" max="100" step="1" value="60">
                   <span class="suffix">%</span>
                 </div>
-                <p class="hint">원하는 과목 중 교내 비율</p>
-              </div>
-              <div class="field">
-                <label for="fCoop">공동교육과정 강좌</label>
-                <div class="suffix-wrap">
-                  <input type="number" id="fCoop" min="0" max="30" step="1" value="5">
-                  <span class="suffix">개</span>
-                </div>
-                <p class="hint">거점·온라인 수강 가능 수</p>
-              </div>
-              <div class="field field-full">
-                <label for="fNet">디지털 인프라</label>
-                <div class="suffix-wrap">
-                  <input type="number" id="fNet" min="0" max="100" step="1" value="70">
-                  <span class="suffix">점</span>
-                </div>
-                <p class="hint">온라인 수업 환경 0~100</p>
+                <p class="hint" id="fWantHint">원하는 과목 중 교내 비율. 개설 과목을 조회하면 희망 계열의 희소 과목 가중치를 반영해 자동 계산됩니다.</p>
               </div>
             </div>
           </div>
 
           <div class="panel-sec">
-            <h3 class="panel-h"><span class="ph-num">03</span>상담 기록</h3>
+            <h3 class="panel-h"><span class="ph-num">03</span>공동교육과정 실사</h3>
+            <p class="hint">직접 조사한 강좌만 등록하세요. 계열 권장 과목과 이름이 같으면 리포트에 실사 확인으로 표시됩니다.</p>
+            <div id="coopTable" class="coop-table"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnCoopAdd">+ 강좌 추가</button>
+            <p class="hint">가중 강좌 수 <b id="coopSum">0</b>개 (기준 <b id="coopBase">12</b>개 = 100점, 온라인 쌍방향 1개 · 대면 거점 0.75개로 환산)</p>
+          </div>
+
+          <div class="panel-sec">
+            <h3 class="panel-h"><span class="ph-num">04</span>디지털 인프라 점검표</h3>
+            <p class="hint">학교 실태를 조사해 해당하는 항목을 체크하세요.</p>
+            <div id="infraList" class="check-list"></div>
+            <p class="hint">합계 <b id="infraSum">0</b> / 100점</p>
+          </div>
+
+          <div class="panel-sec">
+            <h3 class="panel-h"><span class="ph-num">05</span>학점제 운영 점검표</h3>
+            <div id="creditList" class="check-list"></div>
+            <p class="hint">합계 <b id="creditSum">0</b> / 100점</p>
+          </div>
+
+          <div class="panel-sec">
+            <h3 class="panel-h"><span class="ph-num">06</span>상담 기록</h3>
             <div class="field">
               <label for="fMemo">메모<span class="opt">선택</span></label>
               <textarea id="fMemo" rows="4"
@@ -357,7 +366,7 @@ placeholder="조회하면 자동으로 채워집니다. 직접 입력할 때는 
      ===================================================== -->
 <section class="section section-tint" id="batch">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head" data-step="4">
       <span class="step-badge"><i>4</i>학급 단위</span>
       <h2>여러 명을 한 번에 출력</h2>
       <p class="lead">

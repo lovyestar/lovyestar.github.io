@@ -12,6 +12,8 @@
   const val = (id, def) => { const el = $(id); return el ? el.value : def; };
   const setVal = (id, v) => { const el = $(id); if (el && v != null) el.value = v; };
   const numOf = (id, def) => { const n = parseFloat(val(id, '')); return isNaN(n) ? def : n; };
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   function say(id, msg, kind) {
     const el = $(id);
@@ -21,11 +23,17 @@
     el.className = base + (kind ? ' is-' + kind : '');
   }
 
-  const LS_FORM = 'hcs.form.v3';
-  const LS_CFG  = 'hcs.cfg.v3';
+  const LS_FORM   = 'hcs.form.v3';
+  const LS_CFG    = 'hcs.cfg.v3';
+  const LS_COOP   = 'hcs.coop.v1';
+  const LS_INFRA  = 'hcs.infra.v1';
+  const LS_CREDIT = 'hcs.credit.v1';
 
   let batch = [];
   let PICKED_SCHOOL = null;
+  let coopRows = [];               /* [{name, type:'online'|'offline', org}] */
+  let infraChecked = new Set();    /* INFRA_QUESTIONS id 중 체크된 것 */
+  let creditChecked = new Set();   /* CREDIT_QUESTIONS id 중 체크된 것 */
 
   function saveSchool(s) {
     PICKED_SCHOOL = s ? {
@@ -212,7 +220,127 @@
     box.innerHTML = byGroup +
       '<li><b>지역코드</b> big 대도시 / mid 중소도시 / rural 읍면지역</li>' +
       '<li><b>수준코드</b> low 기초 / mid 보통 / high 심화</li>' +
-      `<li><b>학교유형</b>(12번째 열, 생략 가능) ${types}</li>`;
+      `<li><b>학교유형</b>(12번째 열, 생략 가능) ${types}</li>` +
+      '<li><b>학점제 점검표 총점</b>(13번째 열, 생략 가능) 0~100, 생략 시 65점</li>';
+  }
+
+  /* ---------- 공동교육과정 실사 표 ---------- */
+  function saveCoop() {
+    try { localStorage.setItem(LS_COOP, JSON.stringify(coopRows)); } catch (e) {}
+  }
+  function loadCoop() {
+    try { coopRows = JSON.parse(localStorage.getItem(LS_COOP) || '[]'); } catch (e) { coopRows = []; }
+  }
+
+  function coopWeightedSum() {
+    const sum = coopRows.reduce((s, r) => s + (COOP_TYPE_WEIGHT[r.type] || 0), 0);
+    return Math.round(sum * 100) / 100;
+  }
+
+  function renderCoopTable() {
+    const box = $('coopTable');
+    if (!box) return;
+
+    box.innerHTML = coopRows.length ? coopRows.map((row, i) => `
+      <div class="coop-row" data-i="${i}">
+        <input type="text" class="coop-name" placeholder="과목명" value="${esc(row.name)}">
+        <select class="coop-type">
+          <option value="online"${row.type === 'online' ? ' selected' : ''}>온라인 쌍방향</option>
+          <option value="offline"${row.type === 'offline' ? ' selected' : ''}>대면 거점</option>
+        </select>
+        <input type="text" class="coop-org" placeholder="운영 기관(선택)" value="${esc(row.org || '')}">
+        <button type="button" class="coop-del" aria-label="삭제">✕</button>
+      </div>`).join('')
+      : '<p class="hint">등록된 실사 강좌가 없습니다. 강좌 추가를 눌러 입력하세요.</p>';
+
+    const sumEl = $('coopSum');
+    if (sumEl) sumEl.textContent = coopWeightedSum();
+
+    box.querySelectorAll('.coop-row').forEach(rowEl => {
+      const i = +rowEl.dataset.i;
+      rowEl.querySelector('.coop-name').addEventListener('input', e => {
+        coopRows[i].name = e.target.value.trim(); saveCoop(); renderSoon();
+      });
+      rowEl.querySelector('.coop-type').addEventListener('change', e => {
+        coopRows[i].type = e.target.value; saveCoop();
+        if (sumEl) sumEl.textContent = coopWeightedSum();
+        renderSoon();
+      });
+      rowEl.querySelector('.coop-org').addEventListener('input', e => {
+        coopRows[i].org = e.target.value.trim(); saveCoop(); renderSoon();
+      });
+      rowEl.querySelector('.coop-del').addEventListener('click', () => {
+        coopRows.splice(i, 1); saveCoop(); renderCoopTable(); renderSoon();
+      });
+    });
+  }
+
+  function addCoopRow() {
+    coopRows.push({ name: '', type: 'online', org: '' });
+    saveCoop();
+    renderCoopTable();
+  }
+
+  /* ---------- 점검표(디지털 인프라 · 학점제 운영) ---------- */
+  function saveChecklist(key, set) {
+    try { localStorage.setItem(key, JSON.stringify([...set])); } catch (e) {}
+  }
+  function loadChecklist(key) {
+    try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch (e) { return new Set(); }
+  }
+  function checklistSum(questions, checked) {
+    return questions.reduce((s, q) => s + (checked.has(q.id) ? q.points : 0), 0);
+  }
+
+  function renderChecklist(containerId, questions, checked, sumId, storeKey) {
+    const box = $(containerId);
+    if (!box) return;
+
+    box.innerHTML = questions.map(q => `
+      <label class="check-item">
+        <input type="checkbox" data-id="${q.id}"${checked.has(q.id) ? ' checked' : ''}>
+        <span>${esc(q.label)}<i class="check-pt">${q.points}점${q.group ? ' · ' + esc(q.group) : ''}</i></span>
+      </label>`).join('');
+
+    const sumEl = $(sumId);
+    const refresh = () => { if (sumEl) sumEl.textContent = checklistSum(questions, checked); };
+    refresh();
+
+    box.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) checked.add(cb.dataset.id); else checked.delete(cb.dataset.id);
+        refresh();
+        saveChecklist(storeKey, checked);
+        renderSoon();
+      });
+    });
+  }
+
+  function initChecklists() {
+    loadCoop();
+    infraChecked = loadChecklist(LS_INFRA);
+    creditChecked = loadChecklist(LS_CREDIT);
+    renderCoopTable();
+    renderChecklist('infraList', INFRA_QUESTIONS, infraChecked, 'infraSum', LS_INFRA);
+    renderChecklist('creditList', CREDIT_QUESTIONS, creditChecked, 'creditSum', LS_CREDIT);
+    const cb = $('coopBase'); if (cb) cb.textContent = String(COOP_BASELINE);
+  }
+
+  /* 개설 과목 데이터가 있으면 희망 과목 개설률을 자동 계산값으로 표시 */
+  function updateFitDisplay(d) {
+    const input = $('fWant'), tag = $('fWantAutoTag'), hint = $('fWantHint');
+    if (!input || typeof Report === 'undefined') return;
+    const r = Report.buildSubjects(d);
+    if (r.fitScore != null) {
+      input.value = r.fitScore;
+      input.readOnly = true;
+      if (tag) tag.hidden = false;
+      if (hint) hint.textContent = '개설 과목 조회 결과를 바탕으로 자동 계산되었습니다. 다시 손으로 입력하려면 개설 과목 목록을 비우세요.';
+    } else {
+      input.readOnly = false;
+      if (tag) tag.hidden = true;
+      if (hint) hint.textContent = '원하는 과목 중 교내 비율. 개설 과목을 조회하면 희망 계열의 희소 과목 가중치를 반영해 자동 계산됩니다.';
+    }
   }
 
   function today() {
@@ -247,8 +375,10 @@
       subjects:   numOf('fSubjects', 80),
       dup:        numOf('fDup', 12),
       want:       numOf('fWant', 60),
-      coop:       numOf('fCoop', 5),
-      net:        numOf('fNet', 70),
+      coop:       coopWeightedSum(),
+      coopRows:   coopRows.filter(r => r.name),
+      net:        checklistSum(INFRA_QUESTIONS, infraChecked),
+      credit:     checklistSum(CREDIT_QUESTIONS, creditChecked),
       offered:    offered,
       source:     offered.length ? (window.__autoLoaded ? 'auto' : 'manual') : null
     };
@@ -264,7 +394,9 @@
 
   function renderOne() {
     const box = previewBox();
-    if (box) box.innerHTML = Report.render(collect());
+    const d = collect();
+    if (box) box.innerHTML = Report.render(d);
+    updateFitDisplay(d);
   }
 
   function renderSoon() {
@@ -273,7 +405,7 @@
   }
 
   const FORM_IDS = ['fName', 'fNo', 'fGrade', 'fSchoolType', 'fRegion', 'fTrack', 'fLevel',
-    'fGoal', 'fMemo', 'fCounselor', 'fDate', 'fSubjects', 'fDup', 'fWant', 'fCoop', 'fNet',
+    'fGoal', 'fMemo', 'fCounselor', 'fDate', 'fSubjects', 'fDup', 'fWant',
     'fOffered', 'fSchoolName'];
 
   function saveForm() {
@@ -463,6 +595,7 @@ async function lookup() {
         net: toNum(c[9], 70),
         level: toLevel(c[10]),
         schoolType: toSchoolType(c[11], fallbackType),
+        credit: toNum(c[12], 65),
         goal: '', memo: '',
         counselor: common.counselor,
         date: common.date,
@@ -525,12 +658,12 @@ async function lookup() {
     const ta = $('batchInput');
     if (!ta) return;
     ta.value = [
-      '김서연, 20301, 2, ai, big, 88, 14, 70, 6, 80, mid, general',
-      '박준호, 20302, 2, sci, big, 95, 10, 85, 8, 90, high, science',
-      '이하늘, 20303, 2, intl, mid, 76, 11, 65, 5, 75, mid, foreign',
-      '정유진, 20304, 2, music, mid, 70, 9, 72, 4, 70, mid, art',
-      '최민서, 20305, 2, sport, rural, 62, 16, 55, 3, 60, low, sports',
-      '한지우, 20306, 2, edu, rural, 48, 14, 40, 3, 35, low'
+      '김서연, 20301, 2, ai, big, 88, 14, 70, 6, 80, mid, general, 80',
+      '박준호, 20302, 2, sci, big, 95, 10, 85, 8, 90, high, science, 90',
+      '이하늘, 20303, 2, intl, mid, 76, 11, 65, 5, 75, mid, foreign, 65',
+      '정유진, 20304, 2, music, mid, 70, 9, 72, 4, 70, mid, art, 70',
+      '최민서, 20305, 2, sport, rural, 62, 16, 55, 3, 60, low, sports, 50',
+      '한지우, 20306, 2, edu, rural, 48, 14, 40, 3, 35, low, general, 35'
     ].join('\n');
     say('batchStatus', '예시 6명을 채웠습니다. 일괄 생성을 눌러 주세요.', 'ok');
     saveForm();
@@ -542,7 +675,13 @@ async function lookup() {
     const ta = $('batchInput'); if (ta) ta.value = '';
     const stage = $('batchStage'); if (stage) stage.innerHTML = '';
     batch = []; window.__autoLoaded = false;
+    coopRows = []; infraChecked = new Set(); creditChecked = new Set();
+    saveCoop(); saveChecklist(LS_INFRA, infraChecked); saveChecklist(LS_CREDIT, creditChecked);
+    renderCoopTable();
+    renderChecklist('infraList', INFRA_QUESTIONS, infraChecked, 'infraSum', LS_INFRA);
+    renderChecklist('creditList', CREDIT_QUESTIONS, creditChecked, 'creditSum', LS_CREDIT);
     setVal('fDate', today());
+    const wIn = $('fWant'); if (wIn) wIn.readOnly = false;
     try { localStorage.removeItem(LS_FORM); } catch (e) {}
     say('batchStatus', ''); say('lookupState', ''); say('cfgState', '');
     renderOne();
@@ -566,6 +705,7 @@ async function lookup() {
     on('btnSample', 'click', fillSample);
     on('btnBatch', 'click', runBatch);
     on('btnBatchPrint', 'click', printBatch);
+    on('btnCoopAdd', 'click', addCoopRow);
 
     const sn = $('fSchoolName');
     if (sn) sn.addEventListener('keydown', e => {
@@ -593,6 +733,7 @@ async function lookup() {
 
     ensureUI();
     initSelects();
+    initChecklists();
     loadCfg();
     loadForm();
     bind();

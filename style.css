@@ -7,9 +7,9 @@
 
   --line:   #e2e8f0;
   --line-2: #eef2f7;
-  --bg:     #ffffff;
+  --bg:     #fbfaf7;
   --bg-2:   #f8fafc;
-  --tint:   #f6f8fc;
+  --tint:   #f5f3ee;
 
   --brand:     #1d4ed8;
   --brand-2:   #2563eb;
@@ -104,8 +104,8 @@ svg { display: block; }
 .brand-mark {
   width: 34px; height: 34px; border-radius: 11px; flex: none;
   display: grid; place-items: center;
-  background: linear-gradient(140deg, var(--brand-3), var(--brand));
-  color: #fff; box-shadow: var(--sh-brand);
+  background: var(--brand);
+  color: #fff; box-shadow: var(--sh-1);
   transition: transform .5s var(--ease);
 }
 .brand:hover .brand-mark { transform: rotate(-24deg); }
@@ -144,22 +144,19 @@ svg { display: block; }
 .hero {
   position: relative; overflow: hidden;
   padding: 92px 0 88px;
-  background: linear-gradient(178deg, #f4f8ff 0%, #fbfcff 48%, #ffffff 100%);
+  background: linear-gradient(178deg, #faf8f4 0%, #fdfcfa 48%, #fffefc 100%);
   border-bottom: 1px solid var(--line-2);
   isolation: isolate;
 }
 .hero-glow {
-  position: absolute; inset: -34% 24% auto -14%; height: 660px; z-index: -2;
-  background:
-    radial-gradient(46% 46% at 22% 30%, rgba(59,130,246,.20), transparent 68%),
-    radial-gradient(42% 42% at 76% 24%, rgba(109,74,202,.13), transparent 70%);
-  filter: blur(8px);
+  position: absolute; inset: -34% 12% auto -14%; height: 620px; z-index: -2;
+  background: radial-gradient(46% 46% at 26% 32%, rgba(29,78,216,.09), transparent 72%);
 }
 .hero-grid {
   position: absolute; inset: 0; z-index: -1;
   background-image:
-    linear-gradient(rgba(15,23,42,.042) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15,23,42,.042) 1px, transparent 1px);
+    linear-gradient(rgba(15,23,42,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15,23,42,.035) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(70% 60% at 34% 36%, #000 18%, transparent 76%);
   -webkit-mask-image: radial-gradient(70% 60% at 34% 36%, #000 18%, transparent 76%);
@@ -182,7 +179,6 @@ svg { display: block; }
 .pill .dot {
   width: 6px; height: 6px; border-radius: 50%; background: var(--brand-3);
   box-shadow: 0 0 0 3px rgba(59,130,246,.18);
-  animation: pulse 2.4s var(--ease) infinite;
 }
 @keyframes pulse {
   0%,100% { opacity: 1; transform: scale(1); }
@@ -192,12 +188,18 @@ svg { display: block; }
 .hero h1 {
   margin: 22px 0 18px;
   font-size: clamp(30px, 4.4vw, 52px);
-  line-height: 1.17; letter-spacing: -.04em;
+  line-height: 1.17; letter-spacing: -.03em;
 }
 .hero h1 em {
-  font-style: normal;
-  background: linear-gradient(96deg, var(--brand) 0%, #5b7cf7 44%, var(--violet) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  position: relative; z-index: 0;
+  font-style: normal; font-weight: 800;
+  color: var(--brand);
+}
+.hero h1 em::after {
+  content: "";
+  position: absolute; z-index: -1; left: -.09em; right: -.09em;
+  bottom: .02em; height: .32em; border-radius: 99px;
+  background: rgba(59,130,246,.16);
 }
 
 .lead { color: var(--ink-3); max-width: 64ch; }
@@ -211,31 +213,59 @@ svg { display: block; }
   width: 260px; height: 260px;
   display: grid; place-items: center;
 }
+.hero-emblem::before {
+  content: ""; position: absolute; inset: -18%; z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(59,130,246,.16), transparent 72%);
+}
 .emblem-ring {
   position: absolute; inset: 0; border-radius: 50%;
   border: 1px solid var(--brand-line);
   background: radial-gradient(closest-side, rgba(255,255,255,.9), rgba(255,255,255,.24));
-  box-shadow: var(--sh-2);
+  box-shadow: var(--sh-1);
 }
 .emblem-ring.d2 {
   inset: 30px; border-style: dashed; border-color: #c3d7ff;
   background: none; box-shadow: none;
-  animation: spin 44s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .emblem-mark {
   position: relative; width: 116px; height: 116px;
   color: var(--brand);
-  filter: drop-shadow(0 10px 22px rgba(29,78,216,.24));
+  filter: drop-shadow(0 6px 14px rgba(29,78,216,.14));
 }
+
+/* 4단계 여정을 나타내는 작은 경유지 점 — 나침반 둘레를 도는 점선 위에 얹음 */
+.emblem-way {
+  position: absolute; width: 24px; height: 24px; margin: -12px;
+  border-radius: 50%; background: #fff; border: 1.5px solid var(--brand-line);
+  color: var(--brand); font-size: 11px; font-weight: 800;
+  display: grid; place-items: center; box-shadow: var(--sh-1);
+  font-variant-numeric: tabular-nums;
+}
+.emblem-way.w1 { top: 30px;  left: 130px; }
+.emblem-way.w2 { top: 130px; left: 230px; }
+.emblem-way.w3 { top: 230px; left: 130px; }
+.emblem-way.w4 { top: 130px; left: 30px; }
+.emblem-way.w1 { background: var(--brand); border-color: var(--brand); color: #fff; }
 
 /* ===================== 5. 섹션 · 카드 ===================== */
 .section { padding: 82px 0; }
 .section-tint { background: var(--tint); border-block: 1px solid var(--line-2); }
 
-.sec-head { margin-bottom: 32px; max-width: 68ch; }
+.sec-head { position: relative; isolation: isolate; margin-bottom: 32px; max-width: 68ch; }
 .sec-head h2 { font-size: clamp(22px, 2.6vw, 30px); margin: 13px 0 10px; }
+.sec-head[data-step]::before {
+  content: attr(data-step);
+  position: absolute; z-index: -1; top: -20px; right: -6px;
+  font-size: 84px; font-weight: 800; line-height: 1; letter-spacing: -.04em;
+  color: var(--brand); opacity: .07; user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 680px) {
+  .sec-head[data-step]::before { display: none; }
+}
 
 .step-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -247,7 +277,6 @@ svg { display: block; }
   display: grid; place-items: center;
   font-size: 11px; font-style: normal;
   background: var(--brand); color: #fff;
-  box-shadow: var(--sh-brand);
 }
 /* ── 인증키 상태 칩 ── */
 .key-chip {
@@ -268,33 +297,12 @@ svg { display: block; }
   background: #eaf4ff;
   border-color: #b9dcff;
   color: #0369a1;
-  animation: kc-glow 3.4s var(--ease) infinite;
 }
 .key-chip.is-on .kc-dot {
   background: #38bdf8; opacity: 1;
-  box-shadow: 0 0 0 3px rgba(56,189,248,.22);
-  animation: kc-breathe 2.6s var(--ease) infinite;
-}
-.key-chip.is-on .kc-dot::after {
-  content: ""; position: absolute; inset: 0; border-radius: 50%;
-  border: 1px solid #38bdf8;
-  animation: kc-ring 2.6s var(--ease) infinite;
-}
-
-@keyframes kc-breathe {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50%     { opacity: .55; transform: scale(.72); }
-}
-@keyframes kc-ring {
-  0%       { opacity: .55; transform: scale(1); }
-  70%,100% { opacity: 0;   transform: scale(3.6); }
-}
-@keyframes kc-glow {
-  0%,100% { box-shadow: 0 0 0 0 rgba(56,189,248,.16); }
-  50%     { box-shadow: 0 0 0 5px rgba(56,189,248,.05); }
 }
 .card {
-  background: #fff; border: 1px solid var(--line);
+  background: #fff; border: 1px solid var(--line); border-top: 3px solid var(--brand);
   border-radius: var(--r-lg); padding: 32px;
   box-shadow: var(--sh-1);
 }
@@ -389,12 +397,37 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.66; }
   font-size: 12px; color: var(--ink-4); pointer-events: none;
 }
 
+/* 공동교육과정 실사 표 */
+.coop-table { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.coop-row {
+  display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 7px; align-items: center;
+}
+.coop-row input, .coop-row select { padding: 8px 10px; font-size: 13px; }
+.coop-del {
+  flex: none; width: 30px; height: 30px; border-radius: var(--r-sm);
+  border: 1px solid var(--line); background: #fff; color: var(--ink-4);
+  cursor: pointer; font-size: 13px; line-height: 1;
+}
+.coop-del:hover { border-color: var(--err); color: var(--err); background: var(--err-bg); }
+@media (max-width: 560px) { .coop-row { grid-template-columns: 1fr 1fr; } }
+
+/* 점검표(디지털 인프라 · 학점제 운영) */
+.check-list { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+.check-item {
+  display: flex; align-items: flex-start; gap: 9px; margin: 0;
+  padding: 9px 10px; border-radius: var(--r-sm); font-size: 13px; font-weight: 400;
+  color: var(--ink-2); cursor: pointer; line-height: 1.5;
+}
+.check-item:hover { background: var(--bg-2); }
+.check-item input[type="checkbox"] { margin-top: 3px; flex: none; width: 15px; height: 15px; accent-color: var(--brand); }
+.check-pt { display: block; font-style: normal; font-size: 11px; color: var(--ink-4); margin-top: 2px; }
+
 /* ===================== 7. 버튼 · 상태 ===================== */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 10px 19px;
   font-family: inherit; font-size: 13.5px; font-weight: 600; letter-spacing: -.01em;
-  border-radius: var(--r-sm); border: 1px solid var(--line);
+  border-radius: var(--r-md); border: 1px solid var(--line);
   background: #fff; color: var(--ink-2);
   cursor: pointer; white-space: nowrap;
   transition: transform .14s var(--ease), box-shadow .18s var(--ease),
@@ -406,12 +439,12 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.66; }
 .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 .btn-primary {
-  background: linear-gradient(180deg, var(--brand-2), var(--brand));
-  border-color: var(--brand); color: #fff; box-shadow: var(--sh-brand);
+  background: var(--brand);
+  border-color: var(--brand); color: #fff; box-shadow: var(--sh-1);
 }
 .btn-primary:hover {
-  background: linear-gradient(180deg, #2f6ef0, #1a45c4);
-  border-color: #1a45c4; box-shadow: 0 8px 22px rgba(29,78,216,.3);
+  background: #1a45c4;
+  border-color: #1a45c4; box-shadow: var(--sh-2);
 }
 .btn-ghost { background: #fff; }
 .btn-glass {
@@ -424,7 +457,10 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.66; }
 .btn-icon { padding: 10px; flex: none !important; }
 .btn-icon svg { width: 16px; height: 16px; }
 
-.btn-lg { padding: 13px 26px; font-size: 15px; border-radius: 10px; }
+.btn-lg { padding: 13px 26px; font-size: 15px; border-radius: 999px; }
+.btn-lg:hover { transform: translateY(-1px); }
+.btn-lg:active { transform: translateY(0); }
+.btn-sm { padding: 7px 14px; font-size: 12.5px; border-radius: var(--r-sm); }
 
 .state {
   margin-top: 9px; font-size: 12.5px; line-height: 1.55;
@@ -547,7 +583,7 @@ textarea { resize: vertical; min-height: 88px; line-height: 1.66; }
 #batchStage:not(:empty) { margin-top: 32px; }
 
 /* ===================== 10. 꼬리말 ===================== */
-.foot { padding: 50px 0 64px; background: var(--ink); color: #cbd5e1; }
+.foot { padding: 50px 0 64px; background: var(--ink); color: #cbd5e1; border-top: 3px solid var(--brand-3); }
 .foot-in { display: grid; gap: 26px; }
 
 .foot-brand { display: flex; gap: 15px; align-items: flex-start; }
@@ -852,6 +888,10 @@ body.print-batch #preview { display: none !important; }
   .hero-in { grid-template-columns: 1fr; gap: 44px; }
   .hero-emblem { justify-self: start; width: 200px; height: 200px; }
   .emblem-mark { width: 90px; height: 90px; }
+  .emblem-way.w1 { top: 23px;  left: 100px; }
+  .emblem-way.w2 { top: 100px; left: 177px; }
+  .emblem-way.w3 { top: 177px; left: 100px; }
+  .emblem-way.w4 { top: 100px; left: 23px; }
   .split { grid-template-columns: 1fr; }
   .panel { position: static; max-height: none; }
   .panel-scroll { overflow: visible; max-height: none; }
