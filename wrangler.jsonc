@@ -1,0 +1,8 @@
+{
+  "name": "compass-yestar",
+  "compatibility_date": "2026-09-14",
+  "assets": {
+    "directory": "./",
+    "not_found_handling": "404-page"
+  }
+}
